@@ -1,0 +1,13 @@
+include CHANGELOG.md
+include CONTRIBUTING.md
+include LICENSE
+include MANIFEST.in
+include README.rst
+include setup.py
+include version.txt
+include esrally/min-es-version.txt
+recursive-include docs *
+recursive-include esrally/resources *
+# recursive-exclude * __pycache__
+# recursive-exclude * *.py[co]
+# prune docs/_build
