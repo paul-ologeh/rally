@@ -483,6 +483,10 @@ class BulkIndex(Runner):
         if not detailed_results:
             es.return_raw_response()
 
+        refresh =  params.pop("refresh", None)
+        if refresh:
+            bulk_params["refresh"] = refresh
+
         if with_action_metadata:
             api_kwargs.pop("index", None)
             # only half of the lines are documents
