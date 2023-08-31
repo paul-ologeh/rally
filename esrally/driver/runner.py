@@ -627,16 +627,27 @@ class BulkIndex(Runner):
         if not detailed_results:
             es.return_raw_response()
 
-        refresh =  params.pop("refresh", None)
+        refresh = params.pop("refresh", None)
+        version = params.pop("version", None)
+
         if refresh:
             bulk_params["refresh"] = refresh
 
         if with_action_metadata:
             api_kwargs.pop("index", None)
-            # only half of the lines are documents
-            response = await es.bulk(params=bulk_params, **api_kwargs)
+
+            if version == 6:
+                bulk_params["type"] = "doc"
+
+            try:
+                response = await es.bulk(params=bulk_params, **api_kwargs)
+            except Exception as e:
+                logging.info(f"Bulk exception: {e}")
+                raise e
         else:
-            response = await es.bulk(doc_type=params.get("type"), params=bulk_params, **api_kwargs)
+            response = await es.bulk(
+                doc_type=params.get("type"), params=bulk_params, **api_kwargs
+            )
 
         stats = (
             self.detailed_stats(params, response)
@@ -1161,17 +1172,23 @@ class Query(Runner):
                 "took": took,
             }
 
-        search_method = params.get("operation-type")
-        if search_method == "paginated-search":
-            return await _search_after_query(es, params)
-        elif search_method == "scroll-search":
-            return await _scroll_query(es, params)
-        elif "pages" in params:
-            logging.getLogger(__name__).warning("Invoking a scroll search with the 'search' operation is deprecated "
-                                                "and will be removed in a future release. Use 'scroll-search' instead.")
-            return await _scroll_query(es, params)
-        else:
-            return await _request_body_query(es, params)
+        try:
+            search_method = params.get("operation-type")
+            if search_method == "paginated-search":
+                return await _search_after_query(es, params)
+            elif search_method == "scroll-search":
+                return await _scroll_query(es, params)
+            elif "pages" in params:
+                logging.getLogger(__name__).warning(
+                    "Invoking a scroll search with the 'search' operation is deprecated "
+                    "and will be removed in a future release. Use 'scroll-search' instead."
+                )
+                return await _scroll_query(es, params)
+            else:
+                return await _request_body_query(es, params)
+        except Exception as e:
+            logging.info(f"Query Exception: {e}")
+            raise e
 
     async def _raw_search(self, es, doc_type, index, body, params, headers=None):
         components = []
