@@ -1,4 +1,4 @@
-Rally (Forked)
+Rally (Forked but not really)
 =====
 
 Rally is the macrobenchmarking framework for Elasticsearch
