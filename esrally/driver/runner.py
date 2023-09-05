@@ -645,9 +645,13 @@ class BulkIndex(Runner):
                 logging.info(f"Bulk exception: {e}")
                 raise e
         else:
-            response = await es.bulk(
-                doc_type=params.get("type"), params=bulk_params, **api_kwargs
-            )
+            try:
+                response = await es.bulk(
+                    doc_type=params.get("type"), params=bulk_params, **api_kwargs
+                )
+            except Exception as e:
+                logging.info(f"Bulk exception: {e}")
+                raise e
 
         stats = (
             self.detailed_stats(params, response)
